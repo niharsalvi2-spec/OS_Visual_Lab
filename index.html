@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS Visual Lab - Process Synchronization</title>
+    <!-- Modern Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+    <header class="hero">
+        <div class="glow-bg"></div>
+        <h1>OS Visual Lab</h1>
+        <p class="subtitle">Process Synchronization & Race Conditions</p>
+    </header>
+
+    <main class="container">
+        <!-- CONCEPT INTRODUCTION -->
+        <section class="glass-card">
+            <h2>1. Concept Introduction</h2>
+            <p><strong>Process Synchronization</strong> is the traffic control system of an operating system. When multiple processes or threads share resources—like memory variables, files, or hardware devices—they can accidentally overwrite each other's work if they try to access the resource at the exact same time. This chaos is called a <strong>Race Condition</strong>.</p>
+            <p>To prevent this, the OS uses synchronization techniques. By creating a restricted zone called the <strong>Critical Section</strong>, the OS ensures that only one process can enter and modify shared data at a time. The others must wait.</p>
+        </section>
+
+        <!-- MODE SELECTOR -->
+        <nav class="mode-selector">
+            <button class="mode-btn active" data-mode="visual">Visual Mode 🎨</button>
+            <button class="mode-btn" data-mode="cpu">CPU Mode ⚙️</button>
+            <button class="mode-btn" data-mode="code">Code Mode 💻</button>
+        </nav>
+
+        <div id="mode-visual" class="mode-section active">
+        <!-- REAL LIFE ANALOGY -->
+        <section class="glass-card analogy-section">
+            <h2>2. Real-Life Analogy: The Coffee Shop Bathroom</h2>
+            <div class="analogy-container">
+                <div class="analogy-text">
+                    <p>Think of a <strong>Single-Stall Bathroom</strong> at a busy coffee shop.</p>
+                    <ul class="analogy-list">
+                        <li><strong>The Shared Resource (Critical Section):</strong> The bathroom stall itself.</li>
+                        <li><strong>The Mutex (Lock):</strong> The physical key hanging at the barista counter.</li>
+                        <li><strong>The Process:</strong> A customer.</li>
+                    </ul>
+                    <p>If a customer (Process P1) wants to use the bathroom, they must take the key from the counter. They go in and lock the door. If customer P2 arrives, they see the key is missing. They cannot barge in; they must form a "Waiting Queue" by the counter. P2 can only enter <em>after</em> P1 finishes and successfully returns the key to the wall.</p>
+                    <p>Without the key system (no synchronization), multiple people would barge into the stall at the same time—a true Race Condition!</p>
+                </div>
+                <div class="analogy-icon">
+                    <span class="emoji-large">☕ 🚽 🔑</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISUAL ANIMATION SIMULATOR -->
+        <section class="glass-card visualizer-section">
+            <h2>3. Interactive Visualizer: The Shared Bank Account</h2>
+            <p class="instruction">Watch what happens when two processes try to update the same memory concurrently.</p>
+            
+            <div class="controls">
+                <button id="btn-race" class="btn btn-danger">Simulate Race Condition (No Sync)</button>
+                <button id="btn-mutex" class="btn btn-success">Simulate Mutex Lock</button>
+                <button id="btn-reset" class="btn btn-secondary">Reset</button>
+            </div>
+
+            <div class="simulation-canvas">
+                <!-- Lock Icon -->
+                <div class="lock-icon hidden" id="mutex-lock">🔓</div>
+                
+                <!-- Shared Memory Box -->
+                <div class="shared-memory" id="shared-box">
+                    <div class="mem-label">Memory: Bank Balance</div>
+                    <div class="mem-value" id="balance-val">$100</div>
+                </div>
+
+                <!-- Process 1 -->
+                <div class="process" id="process-1">
+                    <div class="process-name">P1</div>
+                    <div class="process-action">+$50</div>
+                    <div class="speech-bubble" id="speech-p1"></div>
+                </div>
+
+                <!-- Process 2 -->
+                <div class="process" id="process-2">
+                    <div class="process-name">P2</div>
+                    <div class="process-action">-$20</div>
+                    <div class="speech-bubble" id="speech-p2"></div>
+                </div>
+
+                <!-- Waiting Queue -->
+                <div class="waiting-queue" id="wait-queue">
+                    <h3>Waiting Queue</h3>
+                </div>
+            </div>
+            
+            <!-- Log output for explanation -->
+            <div class="log-box" id="sim-log">
+                Click a simulation button to begin.
+            </div>
+        </section>
+
+        </section>
+        
+
+        </div>
+
+        <div id="mode-cpu" class="mode-section">
+        <!-- HARDWARE TOOLS -->
+        <section class="glass-card hardware-section">
+            <h2>1. Hardware Tools for the Critical Section</h2>
+            <p>Operating systems rely fundamentally on physical hardware support to implement process synchronization. Without hardware-level guarantees, software-only solutions are prone to failure on modern multi-core processors.</p>
+            
+            <div class="hw-tools-grid">
+                <div class="hw-card">
+                    <div class="hw-icon">🛑</div>
+                    <h3>Interrupt Disabling</h3>
+                    <p>On single-core processors, disabling hardware interrupts prevents context switching while a process modifies shared variables. However, this is dangerous; a buggy process could freeze the system, and it is completely ineffective on multi-core CPUs.</p>
+                </div>
+                <div class="hw-card">
+                    <div class="hw-icon">⚡</div>
+                    <h3>Test-And-Set (TSL)</h3>
+                    <p>An <strong>atomic</strong> hardware command. It reads the current state of a lock and sets it to <code>1</code> in a single, un-interruptible CPU clock cycle. It locks the memory bus, guaranteeing no other core can interfere.</p>
+                </div>
+                <div class="hw-card">
+                    <div class="hw-icon">🔄</div>
+                    <h3>Compare-And-Swap (CAS)</h3>
+                    <p>A sophisticated atomic instruction that compares the current value in memory to an expected value. If they match, it swaps in a new value. This forms the backbone of modern, high-performance <em>lock-free</em> algorithms.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CPU MODE -->
+        <section class="glass-card">
+            <h2>2. CPU Mode: Real Computer Working</h2>
+            <p>What actually happens inside the silicon when Process P1 tries to acquire a lock?</p>
+            <ol class="steps-list">
+                <li><strong>Hardware Level (`Test-and-Set`):</strong> The CPU hardware provides an <strong>Atomic Instruction</strong> (e.g., TSL). This momentarily locks the motherboard's memory bus, allowing a CPU core to read the lock bit and set it to 1 in a single un-interruptible lightning-fast clock cycle.</li>
+                <li><strong>The OS Kernel Steps In:</strong> If P2 finds the lock is already 1, the thread makes a system call to the OS kernel.</li>
+                <li><strong>Context Switching:</strong> The OS kernel saves P2's exact CPU state and moves it to a <strong>Waiting Queue</strong> attached to that mutex. The CPU core is freed.</li>
+                <li><strong>The Wake-Up Call:</strong> When P1 finishes, it executes `unlock`. The kernel jumps back in, wakes P2 from the queue, flags it as Ready, and puts it back on the CPU.</li>
+            </ol>
+        </section>
+
+        </section>
+        </div>
+
+        <div id="mode-code" class="mode-section">
+        <!-- CODE SECTION -->
+        <section class="glass-card code-section">
+            <h2>1. Code Mode: OS Implementation</h2>
+            <p>How this logic is implemented in C using POSIX threads.</p>
+            <pre><code>#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt; // OS threading library
+
+int shared_database = 0;       // The Shared Resource
+pthread_mutex_t os_lock;       // The OS-level Mutex (The Key)
+
+void* run_process(void* arg) {
+    char* p_name = (char*)arg;
+
+    // 1. Process requests the Lock.
+    pthread_mutex_lock(&amp;os_lock); 
+    
+    // --- 🚨 CRITICAL SECTION START ---
+    shared_database++; // Safely modify data
+    // --- 🚨 CRITICAL SECTION END ---
+    
+    // 2. Process exits and releases the lock. 
+    pthread_mutex_unlock(&amp;os_lock);
+    return NULL;
+}</code></pre>
+        </section>
+
+        <!-- VISUAL DIAGRAM -->
+        <section class="glass-card diagram-section">
+            <h2>7. Visual Diagram: OS Flow</h2>
+            <p>A flowchart representation of how Process P1 and P2 interact with the Critical Section via OS Kernel.</p>
+            <div class="mermaid-container">
+                <div class="mermaid">
+                    graph TD
+                        style CriticalSection fill:#ffcccc,stroke:#ff0000,stroke-width:2px,color:#000
+                        style Lock fill:#ffd700,stroke:#d4af37,stroke-width:4px,color:#000
+
+                        subgraph Memory Zone
+                            Lock((Mutex Lock 🔏))
+                            CriticalSection[Critical Section<br>Shared Memory]
+                        end
+
+                        subgraph OS Kernel
+                            WQ[Waiting Queue]
+                            Scheduler{CPU Scheduler}
+                        end
+
+                        P1[Process P1] -->|1. Test & Set Instruction| Lock
+                        Lock -->|2. Lock Acquired!| CriticalSection
+                        P2[Process P2] -->|3. Tries to acquire| Lock
+                        Lock -.->|4. DENIED: Already Locked| P2
+                        P2 -.->|5. Kernel moves to Wait| WQ
+                        CriticalSection -->|6. P1 Releases Lock| Lock
+                        Lock -->|7. Kernel Interrupt| WQ
+                        WQ -->|8. Push back to CPU| Scheduler
+                        Scheduler -->|9. P2 Enters safely| CriticalSection
+                </div>
+            </div>
+        </section>
+
+        </div>
+
+        <!-- KEY INSIGHT -->
+        <section class="glass-card insight-section">
+            <h2>Key Insight</h2>
+            <div class="insight-box">
+                <p>Without synchronization, multi-core processing is incredibly fast but fundamentally broken. <strong>Process synchronization proves that in Operating Systems, coordination is just as important as computational speed.</strong> Raw speed implies chaos; logic bridges the gap to create scalable, predictable systems.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>OS Visual Lab &copy; 2026 | Built for Visual Learners</p>
+    </footer>
+
+    <!-- Add Mermaid for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            fontFamily: 'Outfit'
+        });
+    </script>
+    <script src="simulation.js"></script>
+</body>
+</html>
